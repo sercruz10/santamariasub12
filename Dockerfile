@@ -33,10 +33,18 @@ RUN chown -R www-data:www-data /var/www && \
     chmod -R 755 /var/www/storage && \
     chmod -R 755 /var/www/bootstrap/cache
 
-# Set up Laravel environment and cache (optional: override with Render secrets)
+# Set up Laravel environment and application
 RUN cp .env.example .env && \
     composer install --no-dev --optimize-autoloader && \
-    php artisan key:generate && \
+    php artisan key:generate
+
+# Dump routes for debugging (optional)
+RUN php artisan route:list
+
+# Clear and re-cache Laravel configuration (AFTER all routes and .env are present)
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
     php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache
