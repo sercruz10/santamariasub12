@@ -24,7 +24,6 @@ EXPOSE 80
 
 # Run Laravel setup and start Apache
 CMD composer install --no-dev --optimize-autoloader && \
-    php artisan key:generate --force && \
     php artisan migrate --force && \
     php artisan config:cache && \
     apache2-foreground
