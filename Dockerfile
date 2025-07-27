@@ -22,8 +22,10 @@ RUN chown -R www-data:www-data /var/www/html \
 
 EXPOSE 80
 
-# Run Laravel setup and start Apache
-CMD composer install --no-dev --optimize-autoloader && \
-    php artisan migrate --force && \
+# Set up Laravel for production
+RUN composer install --no-dev --optimize-autoloader && \
     php artisan config:cache && \
-    apache2-foreground
+    php artisan route:cache && \
+    php artisan view:cache
+
+CMD ["apache2-foreground"]
