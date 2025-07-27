@@ -1,6 +1,7 @@
 FROM php:8.2-apache
 
-WORKDIR /var/www/html
+# Set working directory
+WORKDIR /var/www
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
@@ -13,31 +14,28 @@ RUN a2enmod rewrite
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy Laravel files
-COPY . /var/www/html
+# Copy Laravel project files
+COPY . /var/www
 
-# Set correct document root to /public
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
-
-# Permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
-
-# Set Apache document root to /public
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf && \
-    echo '<Directory /var/www/html/public>\n\
+# Set correct Apache DocumentRoot to Laravel's /public directory
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/public|g' /etc/apache2/sites-available/000-default.conf && \
+    echo '<Directory /var/www/public>\n\
         AllowOverride All\n\
         Require all granted\n\
     </Directory>' >> /etc/apache2/apache2.conf
 
+# Set permissions
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage
 
-
-# Laravel optimizations
+# Install Laravel dependencies and optimize
 RUN composer install --no-dev --optimize-autoloader && \
     php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache
 
+# Expose port 80
 EXPOSE 80
 
+# Start Apache server
 CMD ["apache2-foreground"]
