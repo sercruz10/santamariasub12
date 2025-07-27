@@ -12,3 +12,6 @@ Route::post('logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('dashboard', [PlayersController::class, 'listPlayer'])->middleware('auth');
 
+Route::get('/', function () {
+    return 'ok';
+});
