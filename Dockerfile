@@ -23,11 +23,6 @@ RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /e
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage
 
-RUN sed -i 's|/var/www/|/var/www/html/public|g' /etc/apache2/apache2.conf && \
-    echo '<Directory /var/www/html/public>\n\
-        AllowOverride All\n\
-    </Directory>' >> /etc/apache2/apache2.conf
-
 # Enable Apache rewrite and .htaccess
 RUN a2enmod rewrite && \
     sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf && \
