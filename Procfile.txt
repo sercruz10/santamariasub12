@@ -1,2 +1,0 @@
-# cria/atualiza o Procfile para usar Apache apontando para public/
-echo 'web: heroku-php-apache2 public/' > Procfile
