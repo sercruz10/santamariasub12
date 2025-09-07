@@ -1,38 +1,47 @@
-# 1) Composer (instala dependências PHP)
-FROM composer:2 AS vendor
+# ===== 1) BUILDER PHP + COMPOSER (com extensões) =====
+FROM php:8.2-fpm-alpine AS php_builder
+
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_MEMORY_LIMIT=-1
+
+# Dependências para extensões e composer
+RUN apk add --no-cache git unzip icu-dev libzip-dev oniguruma-dev mariadb-connector-c-dev $PHPIZE_DEPS
+
+# Extensões PHP necessárias (MySQL)
+RUN docker-php-ext-install intl mbstring zip pdo pdo_mysql
+
+# Composer (da imagem oficial)
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 WORKDIR /app
+# Copia manifestos primeiro (melhora cache)
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist --no-progress --no-interaction
+# Torna verboso a 1ª vez para ver erros; depois podes remover -vvv
+RUN composer install -vvv --no-dev --prefer-dist --no-interaction --no-progress
+# Copia o resto do código
 COPY . .
+RUN composer dump-autoload -o
 
-# 2) (Opcional) Build de assets com Vite
-FROM node:20-alpine AS assets
-WORKDIR /app
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
-RUN npm ci || npm install
-COPY . .
-RUN npm run build
-
-# 3) Runtime: PHP-FPM + Nginx via supervisord
+# ===== 2) RUNTIME PHP-FPM + NGINX =====
 FROM php:8.2-fpm-alpine
-RUN apk add --no-cache nginx supervisor icu-dev libzip-dev oniguruma-dev libpq-dev
-# PHP extensions (ajusta p/ MySQL se precisares)
-RUN docker-php-ext-install intl mbstring zip opcache pdo pdo_pgsql
-# (MySQL alternativa)
-# RUN apk add --no-cache mariadb-connector-c-dev && docker-php-ext-install pdo_mysql
+
+# Nginx + Supervisor + libs necessárias
+RUN apk add --no-cache nginx supervisor icu-dev libzip-dev oniguruma-dev mariadb-connector-c-dev
+
+# Extensões no runtime (iguais ao builder)
+RUN docker-php-ext-install intl mbstring zip opcache pdo pdo_mysql
 
 WORKDIR /var/www
-COPY --from=vendor /app /var/www
-# Copia assets do Vite (se existir)
-COPY --from=assets /app/public/build /var/www/public/build
 
-# Nginx + Supervisor
+# Código + vendor do builder
+COPY --from=php_builder /app /var/www
+
+# Configs Nginx/Supervisor
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/supervisord.conf /etc/supervisord.conf
 
-# Permissões de escrita
-RUN chown -R www-data:www-data /var/www \
- && chmod -R 775 storage bootstrap/cache
+# Permissões Laravel
+RUN chown -R www-data:www-data /var/www && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 10000
 CMD ["/usr/bin/supervisord","-c","/etc/supervisord.conf"]
