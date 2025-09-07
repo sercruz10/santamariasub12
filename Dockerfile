@@ -24,7 +24,7 @@ RUN docker-php-ext-install intl mbstring zip opcache pdo pdo_pgsql
 WORKDIR /var/www
 COPY --from=vendor /app /var/www
 # Copia assets do Vite (se existir)
-COPY --from=assets /app/public/build /var/www/public/build 2>/dev/null || true
+COPY --from=assets /app/public/build /var/www/public/build
 
 # Nginx + Supervisor
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
