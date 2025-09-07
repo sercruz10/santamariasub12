@@ -1,56 +1,38 @@
-FROM php:8.2-apache
+# 1) Composer (instala dependências PHP)
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-progress --no-interaction
+COPY . .
 
-# Set working directory
+# 2) (Opcional) Build de assets com Vite
+FROM node:20-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+RUN npm ci || npm install
+COPY . .
+RUN npm run build
+
+# 3) Runtime: PHP-FPM + Nginx via supervisord
+FROM php:8.2-fpm-alpine
+RUN apk add --no-cache nginx supervisor icu-dev libzip-dev oniguruma-dev libpq-dev
+# PHP extensions (ajusta p/ MySQL se precisares)
+RUN docker-php-ext-install intl mbstring zip opcache pdo pdo_pgsql
+# (MySQL alternativa)
+# RUN apk add --no-cache mariadb-connector-c-dev && docker-php-ext-install pdo_mysql
+
 WORKDIR /var/www
+COPY --from=vendor /app /var/www
+# Copia assets do Vite (se existir)
+COPY --from=assets /app/public/build /var/www/public/build 2>/dev/null || true
 
-# Install system dependencies and PHP extensions
-RUN apt-get update && apt-get install -y \
-    zip unzip curl git libzip-dev libonig-dev libxml2-dev \
-    && docker-php-ext-install pdo pdo_mysql zip
+# Nginx + Supervisor
+COPY deploy/nginx.conf /etc/nginx/nginx.conf
+COPY deploy/supervisord.conf /etc/supervisord.conf
 
-# Enable Apache modules
-RUN a2enmod rewrite
+# Permissões de escrita
+RUN chown -R www-data:www-data /var/www \
+ && chmod -R 775 storage bootstrap/cache
 
-# Fix Apache ServerName warning
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copy Laravel application files
-COPY . /var/www
-
-# Set correct Apache DocumentRoot to Laravel public directory
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/public|g' /etc/apache2/sites-available/000-default.conf && \
-    echo '<Directory /var/www/public>\n\
-        Options -Indexes\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>' >> /etc/apache2/apache2.conf
-
-# Set file and folder permissions
-RUN chown -R www-data:www-data /var/www && \
-    chmod -R 755 /var/www/storage && \
-    chmod -R 755 /var/www/bootstrap/cache
-
-# Set up Laravel environment and application
-RUN cp .env.example .env && \
-    composer install --no-dev --optimize-autoloader && \
-    php artisan key:generate
-
-# Dump routes for debugging (optional)
-RUN php artisan route:list
-
-# Clear and re-cache Laravel configuration (AFTER all routes and .env are present)
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear && \
-    php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
-
-# Expose port 80 to the web
-EXPOSE 80
-
-# Start Apache in foreground
-CMD ["apache2-foreground"]
+EXPOSE 10000
+CMD ["/usr/bin/supervisord","-c","/etc/supervisord.conf"]
