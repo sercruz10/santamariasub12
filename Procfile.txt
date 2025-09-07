@@ -1,6 +1,2 @@
 # cria/atualiza o Procfile para usar Apache apontando para public/
 echo 'web: heroku-php-apache2 public/' > Procfile
-
-git add Procfile
-git commit -m "Heroku: definir docroot public/"
-git push heroku main   # ou: git push heroku HEAD:main
