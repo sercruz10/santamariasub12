@@ -1,0 +1,15 @@
+# public/.htaccess
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Se existir um ficheiro/pasta, serve-o diretamente…
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+
+    # …caso contrário, envia tudo para index.php
+    RewriteRule ^ index.php [L]
+</IfModule>
