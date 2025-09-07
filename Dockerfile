@@ -17,7 +17,7 @@ WORKDIR /app
 # Copia manifestos primeiro (melhora cache)
 COPY composer.json composer.lock ./
 # Torna verboso a 1ª vez para ver erros; depois podes remover -vvv
-RUN composer install -vvv --no-dev --prefer-dist --no-interaction --no-progress
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts
 # Copia o resto do código
 COPY . .
 RUN composer dump-autoload -o
