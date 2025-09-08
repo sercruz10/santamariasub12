@@ -28,7 +28,7 @@ class DailyTask extends Command
     public function handle(){
        $query = \DB::table('sergio')->whereMonth('full_birthday', '=', date('m'))->whereDay('full_birthday', '=', date('d'))->get();
         foreach ($query as $user){
-            Mail::to($user->email)->send(new BirthdayMail($user->name));      
+            Mail::to($user->email)->send(new BirthdayMail('sergio.cruz@outlook.pt'));      
         }
     }
 }
