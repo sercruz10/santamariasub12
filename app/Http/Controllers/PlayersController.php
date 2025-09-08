@@ -12,11 +12,12 @@ class PlayersController extends Controller
 
     public function listPlayer(){
         $query = DB::select('SELECT * FROM sergio');
+        
+        return view('welcome', ['players' => $query]);
+    }
 
-
-    return view('welcome', ['players' => $query]);
-
-
+    public function birthday(Request $request){
+        
     }
 
 }
