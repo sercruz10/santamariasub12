@@ -52,11 +52,8 @@
         </div>
         <div class="body">
             <p>Estimado {{ $name }}:</p>
-            <p>Te deseo un día lleno de amor, alegría y todas tus cosas favoritas.</p>
-            <p>Gracias por ser una parte increíble de nuestro equipo. ¡Somos muy afortunados de tenerte con nosotros!</p>
-            <p>¡Disfruta al máximo de tu día especial!</p>
-            <p>Mis mejores deseos,</p>
-            <p><strong></strong></p>
+            <p>Desejo-lhe um dia cheio de amor, alegria e todas as suas coisas favoritas.</p> <p>Obrigado por ser uma parte incrível da nossa equipe. Somos muito afortunados por tê-lo conosco!</p> <p>Aproveite ao máximo o seu dia especial!</p> <p>Os meus melhores desejos,</p>
+            <p><strong>SC</strong></p>
             </div>
             <div class="footer">
             <p>&copy; {{ date('Y') }} </p>
