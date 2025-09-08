@@ -12,11 +12,20 @@ class PlayersController extends Controller
 
     public function listPlayer(){
         $query = DB::select('SELECT * FROM sergio');
+        
+        return view('welcome', ['players' => $query]);
+    }
 
+    public function birthday(Request $request){
+        try {
+            \Artisan::call('daily:run');
+        } catch (\Throwable $th) {
+            \Log::debug($th->getMessage() . ' in ' . $th->getFile() . ' on line ' . $th->getLine());
+        }
 
-    return view('welcome', ['players' => $query]);
+        $response = 'ok';
 
-
+        return response()->json(compact('response'));
     }
 
 }
