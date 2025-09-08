@@ -17,7 +17,15 @@ class PlayersController extends Controller
     }
 
     public function birthday(Request $request){
-        
+        try {
+            \Artisan::call('daily:run');
+        } catch (\Throwable $th) {
+            \Log::debug($th->getMessage() . ' in ' . $th->getFile() . ' on line ' . $th->getLine());
+        }
+
+        $response = 'ok';
+
+        return response()->json(compact('response'));
     }
 
 }
